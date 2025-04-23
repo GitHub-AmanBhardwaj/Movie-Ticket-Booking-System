@@ -1,331 +1,137 @@
-import java.awt.*;
-import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.regex.Pattern;
 
-public class MovieTicketBookingSystem extends Frame {
-    private static final int WINDOW_WIDTH = 800;
-    private static final int WINDOW_HEIGHT = 600;
-    private static final int MARGIN = 30;
-    private static final int INSET = 20;
-    private static final int TEXT_FIELD_WIDTH = 30;
-    private static final Dimension STATUS_LABEL_SIZE = new Dimension(600, 40);
-    private static final Dimension BUTTON_SIZE = new Dimension(250, 50);
+public class MovieTicketBookingSystem {
     private static final Pattern CUSTOMER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]+$");
     private static final Pattern CUSTOMER_NAME_PATTERN = Pattern.compile("^[a-zA-Z\\s]+$");
     private static final int MAX_TICKETS = 10;
+    private static final List<String> MOVIES = Arrays.asList("Avengers", "Inception", "The Matrix");
+    private static final List<String> SHOWTIMES = Arrays.asList("12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM");
 
     private List<Booking> bookings = new ArrayList<>();
     private Map<String, Map<String, Integer>> seatAvailability = new HashMap<>();
     private int bookingCounter = 0;
-    private List<String> movies = Arrays.asList("Avengers", "Inception", "The Matrix");
-    private List<String> showtimes = Arrays.asList("12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM");
-
-    private Panel mainPanel, bookingPanel, summaryPanel;
-    private CardLayout cardLayout = new CardLayout();
-    private Button bookTicketsBtn, deleteBookingBtn, viewBookingsBtn, backToBookingBtn;
-    private Label titleLabel, customerIdLabel, customerNameLabel, movieLabel, showtimeLabel, ticketsLabel, deleteIdLabel, statusLabel;
-    private TextField customerIdField, customerNameField, ticketsField, deleteIdField;
-    private Choice movieChoice, showtimeChoice;
-    private TextArea summaryArea;
-
-    private static final Color PRIMARY_COLOR = new Color(41, 128, 185);
-    private static final Color SECONDARY_COLOR = new Color(52, 152, 219);
-    private static final Color ACCENT_COLOR = new Color(231, 76, 60);
-    private static final Color BACKGROUND_COLOR = new Color(236, 240, 241);
-    private static final Color TEXT_COLOR = new Color(44, 62, 80);
-
-    private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 28);
-    private static final Font LABEL_FONT = new Font("Segoe UI", Font.PLAIN, 16);
-    private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 16);
-    private static final Font TEXT_FONT = new Font("Segoe UI", Font.PLAIN, 14);
+    private Scanner scanner = new Scanner(System.in);
 
     public MovieTicketBookingSystem() {
-        super("Movie Ticket Booking System");
         initializeSeatAvailability();
-        setupUI();
-        addEventListeners();
     }
 
     private void initializeSeatAvailability() {
-        for (String movie : movies) {
+        for (String movie : MOVIES) {
             Map<String, Integer> showtimeSeats = new HashMap<>();
-            for (String showtime : showtimes) {
+            for (String showtime : SHOWTIMES) {
                 showtimeSeats.put(showtime, 50);
             }
             seatAvailability.put(movie, showtimeSeats);
         }
     }
 
-    private void setupUI() {
-        setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        setMinimumSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
-        setLayout(new BorderLayout());
-        setBackground(BACKGROUND_COLOR);
-
-        Panel wrapperPanel = new Panel(new BorderLayout(MARGIN, MARGIN));
-        wrapperPanel.setBackground(BACKGROUND_COLOR);
-
-        mainPanel = new Panel(cardLayout);
-        mainPanel.setBackground(BACKGROUND_COLOR);
-
-        bookingPanel = createBookingPanel();
-        mainPanel.add(bookingPanel, "BOOK");
-
-        summaryPanel = createSummaryPanel();
-        mainPanel.add(summaryPanel, "SUMMARY");
-
-        wrapperPanel.add(mainPanel, BorderLayout.CENTER);
-        add(wrapperPanel, BorderLayout.CENTER);
-
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent we) {
-                System.exit(0);
+    public void start() {
+        while (true) {
+            displayMenu();
+            String choice = scanner.nextLine().trim();
+            switch (choice) {
+                case "1":
+                    bookTickets();
+                    break;
+                case "2":
+                    deleteBooking();
+                    break;
+                case "3":
+                    viewBookings();
+                    break;
+                case "4":
+                    System.out.println("Thank you for using the Movie Ticket Booking System. Goodbye!");
+                    scanner.close();
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please enter 1, 2, 3, or 4.");
             }
-        });
-
-        setLocationRelativeTo(null);
-    }
-
-    private Panel createBookingPanel() {
-        Panel panel = new Panel(new GridBagLayout());
-        panel.setBackground(BACKGROUND_COLOR);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(INSET, INSET, INSET, INSET);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.CENTER;
-
-        titleLabel = new Label("Movie Ticket Booking System", Label.CENTER);
-        titleLabel.setFont(TITLE_FONT);
-        titleLabel.setForeground(PRIMARY_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        panel.add(titleLabel, gbc);
-
-        customerIdLabel = new Label("Customer ID:");
-        customerIdLabel.setFont(LABEL_FONT);
-        customerIdLabel.setForeground(TEXT_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0;
-        panel.add(customerIdLabel, gbc);
-
-        customerIdField = new TextField(TEXT_FIELD_WIDTH);
-        customerIdField.setFont(TEXT_FONT);
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        panel.add(customerIdField, gbc);
-
-        customerNameLabel = new Label("Customer Name:");
-        customerNameLabel.setFont(LABEL_FONT);
-        customerNameLabel.setForeground(TEXT_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.weightx = 0;
-        panel.add(customerNameLabel, gbc);
-
-        customerNameField = new TextField(TEXT_FIELD_WIDTH);
-        customerNameField.setFont(TEXT_FONT);
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        panel.add(customerNameField, gbc);
-
-        movieLabel = new Label("Select Movie:");
-        movieLabel.setFont(LABEL_FONT);
-        movieLabel.setForeground(TEXT_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.weightx = 0;
-        panel.add(movieLabel, gbc);
-
-        movieChoice = new Choice();
-        movieChoice.setFont(TEXT_FONT);
-        for (String movie : movies) {
-            movieChoice.add(movie);
         }
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        panel.add(movieChoice, gbc);
-
-        showtimeLabel = new Label("Select Showtime:");
-        showtimeLabel.setFont(LABEL_FONT);
-        showtimeLabel.setForeground(TEXT_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.weightx = 0;
-        panel.add(showtimeLabel, gbc);
-
-        showtimeChoice = new Choice();
-        showtimeChoice.setFont(TEXT_FONT);
-        for (String showtime : showtimes) {
-            showtimeChoice.add(showtime);
-        }
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        panel.add(showtimeChoice, gbc);
-
-        ticketsLabel = new Label("Number of Tickets:");
-        ticketsLabel.setFont(LABEL_FONT);
-        ticketsLabel.setForeground(TEXT_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.weightx = 0;
-        panel.add(ticketsLabel, gbc);
-
-        ticketsField = new TextField(TEXT_FIELD_WIDTH);
-        ticketsField.setFont(TEXT_FONT);
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        panel.add(ticketsField, gbc);
-
-        deleteIdLabel = new Label("Delete by Customer ID:");
-        deleteIdLabel.setFont(LABEL_FONT);
-        deleteIdLabel.setForeground(TEXT_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 6;
-        gbc.weightx = 0;
-        panel.add(deleteIdLabel, gbc);
-
-        deleteIdField = new TextField(TEXT_FIELD_WIDTH);
-        deleteIdField.setFont(TEXT_FONT);
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        panel.add(deleteIdField, gbc);
-
-        bookTicketsBtn = new Button("Book Tickets");
-        styleButton(bookTicketsBtn);
-        gbc.gridx = 0;
-        gbc.gridy = 7;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0;
-        panel.add(bookTicketsBtn, gbc);
-
-        deleteBookingBtn = new Button("Delete Booking");
-        styleButton(deleteBookingBtn, ACCENT_COLOR);
-        gbc.gridx = 1;
-        gbc.gridy = 7;
-        panel.add(deleteBookingBtn, gbc);
-
-        viewBookingsBtn = new Button("View Bookings");
-        styleButton(viewBookingsBtn, ACCENT_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 8;
-        gbc.gridwidth = 2;
-        panel.add(viewBookingsBtn, gbc);
-
-        statusLabel = new Label("", Label.CENTER);
-        statusLabel.setFont(LABEL_FONT);
-        statusLabel.setForeground(ACCENT_COLOR);
-        statusLabel.setPreferredSize(STATUS_LABEL_SIZE);
-        gbc.gridx = 0;
-        gbc.gridy = 9;
-        gbc.gridwidth = 2;
-        panel.add(statusLabel, gbc);
-
-        return panel;
     }
 
-    private Panel createSummaryPanel() {
-        Panel panel = new Panel(new GridBagLayout());
-        panel.setBackground(BACKGROUND_COLOR);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(INSET, INSET, INSET, INSET);
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.anchor = GridBagConstraints.CENTER;
-
-        Label summaryTitle = new Label("Booking Summary", Label.CENTER);
-        summaryTitle.setFont(TITLE_FONT);
-        summaryTitle.setForeground(PRIMARY_COLOR);
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0;
-        panel.add(summaryTitle, gbc);
-
-        summaryArea = new TextArea(20, 60);
-        summaryArea.setFont(new Font("Consolas", Font.PLAIN, 14));
-        summaryArea.setEditable(false);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.weighty = 1.0;
-        panel.add(summaryArea, gbc);
-
-        backToBookingBtn = new Button("Back to Booking");
-        styleButton(backToBookingBtn);
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.weighty = 0;
-        panel.add(backToBookingBtn, gbc);
-
-        return panel;
-    }
-
-    private void styleButton(Button button, Color bgColor) {
-        button.setFont(BUTTON_FONT);
-        button.setBackground(bgColor);
-        button.setForeground(Color.WHITE);
-        button.setPreferredSize(BUTTON_SIZE);
-    }
-
-    private void styleButton(Button button) {
-        styleButton(button, SECONDARY_COLOR);
-    }
-
-    private void addEventListeners() {
-        bookTicketsBtn.addActionListener(e -> bookTickets());
-        deleteBookingBtn.addActionListener(e -> deleteBooking());
-        viewBookingsBtn.addActionListener(e -> viewBookings());
-        backToBookingBtn.addActionListener(e -> cardLayout.show(mainPanel, "BOOK"));
+    private void displayMenu() {
+        System.out.println("\n=== Movie Ticket Booking System ===");
+        System.out.println("1. Book Tickets");
+        System.out.println("2. Delete Booking");
+        System.out.println("3. View Bookings");
+        System.out.println("4. Exit");
+        System.out.print("Enter your choice (1-4): ");
     }
 
     private void bookTickets() {
-        String customerId = customerIdField.getText().trim();
-        String customerName = customerNameField.getText().trim();
-        int movieIndex = movieChoice.getSelectedIndex();
-        int showtimeIndex = showtimeChoice.getSelectedIndex();
-        String ticketsText = ticketsField.getText().trim();
-
+        System.out.print("Enter Customer ID (alphanumeric): ");
+        String customerId = scanner.nextLine().trim();
         if (customerId.isEmpty() || !CUSTOMER_ID_PATTERN.matcher(customerId).matches()) {
-            statusLabel.setText("Please enter a valid Customer ID (alphanumeric)");
+            System.out.println("Invalid Customer ID. Must be alphanumeric.");
             return;
         }
+
+        System.out.print("Enter Customer Name (letters and spaces): ");
+        String customerName = scanner.nextLine().trim();
         if (customerName.isEmpty() || !CUSTOMER_NAME_PATTERN.matcher(customerName).matches()) {
-            statusLabel.setText("Please enter a valid Customer Name (letters and spaces)");
+            System.out.println("Invalid Customer Name. Must contain only letters and spaces.");
             return;
         }
-        if (movieIndex == -1) {
-            statusLabel.setText("Please select a movie");
-            return;
+
+        System.out.println("Available Movies:");
+        for (int i = 0; i < MOVIES.size(); i++) {
+            System.out.println((i + 1) + ". " + MOVIES.get(i));
         }
-        if (showtimeIndex == -1) {
-            statusLabel.setText("Please select a showtime");
-            return;
-        }
-        int tickets;
+        System.out.print("Select Movie (1-" + MOVIES.size() + "): ");
+        int movieIndex;
         try {
-            tickets = Integer.parseInt(ticketsText);
-            if (tickets < 1 || tickets > MAX_TICKETS) {
-                statusLabel.setText("Please enter 1 to " + MAX_TICKETS + " tickets");
+            movieIndex = Integer.parseInt(scanner.nextLine().trim()) - 1;
+            if (movieIndex < 0 || movieIndex >= MOVIES.size()) {
+                System.out.println("Invalid movie selection.");
                 return;
             }
         } catch (NumberFormatException e) {
-            statusLabel.setText("Please enter a valid number of tickets");
+            System.out.println("Invalid input. Please enter a number.");
             return;
         }
 
-        String movie = movies.get(movieIndex);
-        String showtime = showtimes.get(showtimeIndex);
+        System.out.println("Available Showtimes:");
+        for (int i = 0; i < SHOWTIMES.size(); i++) {
+            System.out.println((i + 1) + ". " + SHOWTIMES.get(i));
+        }
+        System.out.print("Select Showtime (1-" + SHOWTIMES.size() + "): ");
+        int showtimeIndex;
+        try {
+            showtimeIndex = Integer.parseInt(scanner.nextLine().trim()) - 1;
+            if (showtimeIndex < 0 || showtimeIndex >= SHOWTIMES.size()) {
+                System.out.println("Invalid showtime selection.");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+            return;
+        }
+
+        System.out.print("Enter Number of Tickets (1-" + MAX_TICKETS + "): ");
+        int tickets;
+        try {
+            tickets = Integer.parseInt(scanner.nextLine().trim());
+            if (tickets < 1 || tickets > MAX_TICKETS) {
+                System.out.println("Please enter 1 to " + MAX_TICKETS + " tickets.");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+            return;
+        }
+
+        String movie = MOVIES.get(movieIndex);
+        String showtime = SHOWTIMES.get(showtimeIndex);
         int availableSeats = seatAvailability.get(movie).get(showtime);
         if (tickets > availableSeats) {
-            statusLabel.setText("Only " + availableSeats + " seats available for " + movie + " at " + showtime);
+            System.out.println("Only " + availableSeats + " seats available for " + movie + " at " + showtime);
             return;
         }
 
@@ -334,20 +140,15 @@ public class MovieTicketBookingSystem extends Frame {
         bookings.add(newBooking);
         seatAvailability.get(movie).put(showtime, availableSeats - tickets);
 
-        customerIdField.setText("");
-        customerNameField.setText("");
-        ticketsField.setText("");
-        movieChoice.select(0);
-        showtimeChoice.select(0);
-
-        statusLabel.setText("Booking confirmed! Booking ID: " + bookingId);
+        System.out.println("Booking confirmed! Booking ID: " + bookingId);
     }
 
     private void deleteBooking() {
-        String deleteId = deleteIdField.getText().trim();
+        System.out.print("Enter Customer ID to delete booking: ");
+        String deleteId = scanner.nextLine().trim();
 
         if (deleteId.isEmpty()) {
-            statusLabel.setText("Please enter a Customer ID to delete");
+            System.out.println("Please enter a Customer ID.");
             return;
         }
 
@@ -363,41 +164,34 @@ public class MovieTicketBookingSystem extends Frame {
             bookings.remove(toRemove);
             seatAvailability.get(toRemove.getMovie())
                     .put(toRemove.getShowtime(), seatAvailability.get(toRemove.getMovie()).get(toRemove.getShowtime()) + toRemove.getTickets());
-            statusLabel.setText("Booking for Customer ID " + deleteId + " deleted successfully");
+            System.out.println("Booking for Customer ID " + deleteId + " deleted successfully.");
         } else {
-            statusLabel.setText("No booking found for Customer ID " + deleteId);
+            System.out.println("No booking found for Customer ID " + deleteId);
         }
-
-        deleteIdField.setText("");
     }
 
     private void viewBookings() {
-        cardLayout.show(mainPanel, "SUMMARY");
         if (bookings.isEmpty()) {
-            summaryArea.setText("No bookings have been made yet.");
+            System.out.println("No bookings have been made yet.");
             return;
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== BOOKING SUMMARY ===\n\n");
-        sb.append("Total Bookings: ").append(bookings.size()).append("\n\n");
-        sb.append(String.format("%-15s%-20s%-20s%-15s%-10s%s\n",
-                "Customer ID", "Customer Name", "Movie", "Showtime", "Tickets", "Booking ID"));
-        sb.append("--------------------------------------------------------------------------------\n");
-
+        System.out.println("\n=== BOOKING SUMMARY ===");
+        System.out.println("Total Bookings: " + bookings.size());
+        System.out.printf("%-15s%-20s%-20s%-15s%-10s%s\n",
+                "Customer ID", "Customer Name", "Movie", "Showtime", "Tickets", "Booking ID");
+        System.out.println("--------------------------------------------------------------------------------");
         for (Booking booking : bookings) {
-            sb.append(String.format("%-15s%-20s%-20s%-15s%-10d%s\n",
+            System.out.printf("%-15s%-20s%-20s%-15s%-10d%s\n",
                     booking.getCustomerId(), booking.getCustomerName(),
                     booking.getMovie(), booking.getShowtime(),
-                    booking.getTickets(), booking.getBookingId()));
+                    booking.getTickets(), booking.getBookingId());
         }
-
-        summaryArea.setText(sb.toString());
     }
 
     public static void main(String[] args) {
         MovieTicketBookingSystem bookingSystem = new MovieTicketBookingSystem();
-        bookingSystem.setVisible(true);
+        bookingSystem.start();
     }
 
     static class Booking {
